@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Analytics Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+
+        .table {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            padding: 15px;
+            border-radius: 25px;
+            border: 2px solid var(--primary-color);
+        }
+
+        .search-box button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            color: white;
+        }
+
+        .recommendation-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .footer {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+
+        .product-image {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: contain;
+        }
+
+        .sequence-card {
+            background-color: #f1f1f1;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .sequence-step {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #e1e1e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                Retail Analytics
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#statistics-section"><i class="fas fa-chart-bar me-1"></i>
+                            Thống kê</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#behavior-section"><i class="fas fa-user-chart me-1"></i> Hành vi mua
+                            sắm</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#sequence-section"><i class="fas fa-sitemap me-1"></i> Chuỗi mua
+                            sắm</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#correlation-section"><i class="fas fa-project-diagram me-1"></i>
+                            Tương quan</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#recommendation-section"><i class="fas fa-lightbulb me-1"></i> Gợi
+                            ý</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Summary Statistics -->
+        <div id="statistics-section" class="row mb-4" data-aos="fade-up">
+            <h2 class="mb-4"><i class="fas fa-chart-pie me-2"></i>Thống kê mô tả</h2>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fas fa-box stat-icon"></i>
+                    <h3 id="total-products" class="mb-0"></h3>
+                    <p class="mb-0">Tổng số sản phẩm</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fas fa-users stat-icon"></i>
+                    <h3 id="total-customers" class="mb-0"></h3>
+                    <p class="mb-0">Tổng số khách hàng</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fas fa-shopping-cart stat-icon"></i>
+                    <h3 id="total-transactions" class="mb-0"></h3>
+                    <p class="mb-0">Tổng số giao dịch</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fas fa-box-open stat-icon"></i>
+                    <h3 id="avg-products" class="mb-0"></h3>
+                    <p class="mb-0">Số sản phẩm/giao dịch</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Products -->
+        <div class="card mb-4" data-aos="fade-up">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-award me-2"></i>Top 10 sản phẩm bán chạy nhất</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Số lượng bán</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-products-quantity"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shopping Behavior Analysis -->
+        <div id="behavior-section" class="row mb-4" data-aos="fade-up">
+            <h2 class="mb-4"><i class="fas fa-shopping-bag me-2"></i>Phân tích hành vi mua sắm</h2>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>Phân bố tần suất mua hàng</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="purchase-frequency-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Phân bố chi tiêu khách hàng</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="spending-distribution-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-user-check me-2"></i>Thống kê mô tả hành vi khách hàng</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <h5>Tần suất mua trung bình</h5>
+                                    <h3 id="avg-purchase-frequency" class="mb-0"></h3>
+                                    <small>giao dịch/khách hàng</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <h5>Chi tiêu trung bình</h5>
+                                    <h3 id="avg-total-spent" class="mb-0"></h3>
+                                    <small>GBP/khách hàng</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <h5>Số sản phẩm khác nhau</h5>
+                                    <h3 id="avg-unique-products" class="mb-0"></h3>
+                                    <small>sản phẩm/khách hàng</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shopping Patterns Section -->
+        <div id="sequence-section" class="card mb-4" data-aos="fade-up">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Chuỗi mua sắm phổ biến</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <h5>Các mẫu mua sắm phổ biến (Top 10)</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Mua trước</th>
+                                <th>→</th>
+                                <th>Mua sau</th>
+                                <th>Hỗ trợ</th>
+                                <th>Độ tin cậy</th>
+                                <th>Độ nâng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shopping-patterns"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Frequently Bought Together Section -->
+        <div class="card mb-4" data-aos="fade-up">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-shopping-basket me-2"></i>Các sản phẩm thường được mua cùng nhau</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm 1</th>
+                                <th>Sản phẩm 2</th>
+                                <th>Số lần mua chung</th>
+                            </tr>
+                        </thead>
+                        <tbody id="frequently-bought-together"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Correlation Analysis -->
+        <div id="correlation-section" class="card mb-4" data-aos="fade-up">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Phân tích tương quan</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h5 class="mb-3">Tương quan giữa các biến</h5>
+                        <div class="chart-container">
+                            <canvas id="correlation-heatmap"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <h5 class="mb-3">Các sản phẩm thường được mua cùng nhau</h5>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Sản phẩm 1</th>
+                                        <th>Sản phẩm 2</th>
+                                        <th>Số lần mua chung</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product-correlations"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Frequent Itemsets & Recommendations -->
+        <div id="recommendation-section" class="row mb-4" data-aos="fade-up">
+            <h2 class="mb-4"><i class="fas fa-lightbulb me-2"></i>Tập phổ biến & Gợi ý sản phẩm</h2>
+
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-th me-2"></i>Tập phổ biến</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Tập các sản phẩm</th>
+                                        <th>Hỗ trợ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="frequent-itemsets"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Luật kết hợp</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Antecedents</th>
+                                        <th>→</th>
+                                        <th>Consequents</th>
+                                        <th>Lift</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="association-rules"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-search me-2"></i>Tìm gợi ý sản phẩm</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="search-box">
+                            <input type="text" id="product-input" class="form-control"
+                                placeholder="Nhập tên sản phẩm để xem các gợi ý...">
+                            <button id="get-recommendations" class="btn">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                        <div id="recommendations-result" class="mt-4">
+                            <h5>Gợi ý cho sản phẩm: <span id="current-product" class="text-primary"></span></h5>
+                            <div class="row mt-3" id="recommendations-list">
+                                <!-- Recommendations will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-chart-line me-2"></i>Retail Analytics Dashboard</h5>
+                    <p>Phân tích dữ liệu bán lẻ Online Retail Dataset</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p>&copy; 2024 Retail Analytics. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 1000,
+            once: true
+        });
+
+        const apiUrl = 'http://127.0.0.1:5000';
+
+        // Load product statistics
+        function loadProductStatistics() {
+            fetch(`${apiUrl}/product-statistics`)
+                .then(response => response.json())
+                .then(data => {
+                    // Populate summary statistics
+                    document.getElementById('total-products').textContent = data.total_products.toLocaleString();
+                    document.getElementById('total-customers').textContent = data.total_customers.toLocaleString();
+                    document.getElementById('total-transactions').textContent = data.total_transactions.toLocaleString();
+                    document.getElementById('avg-products').textContent = data.avg_products_per_transaction.toFixed(2);
+
+                    // Populate top products by quantity
+                    const topProductsTable = document.getElementById('top-products-quantity');
+                    topProductsTable.innerHTML = '';
+
+                    data.top_products_by_quantity.forEach(product => {
+                        const row = topProductsTable.insertRow();
+                        const productCell = row.insertCell(0);
+                        const quantityCell = row.insertCell(1);
+
+                        productCell.textContent = product.Description;
+                        quantityCell.textContent = product.TotalQuantity.toLocaleString();
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching product statistics:', error);
+                });
+        }
+
+        // Load shopping behavior
+        function loadShoppingBehavior() {
+            fetch(`${apiUrl}/shopping-behavior`)
+                .then(response => response.json())
+                .then(data => {
+                    // Populate average statistics
+                    document.getElementById('avg-purchase-frequency').textContent = data.average_stats.avg_purchase_frequency.toFixed(2);
+                    document.getElementById('avg-total-spent').textContent = data.average_stats.avg_total_spent.toFixed(2);
+                    document.getElementById('avg-unique-products').textContent = data.average_stats.avg_unique_products.toFixed(2);
+
+                    // Create purchase frequency distribution chart
+                    const purchaseFreq = data.purchase_frequency_distribution;
+                    const freqCtx = document.getElementById('purchase-frequency-chart').getContext('2d');
+
+                    new Chart(freqCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(purchaseFreq),
+                            datasets: [{
+                                label: 'Số lượng khách hàng',
+                                data: Object.values(purchaseFreq),
+                                backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                                borderColor: 'rgba(52, 152, 219, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Phân bố tần suất mua hàng'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Số lượng khách hàng'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Số lần mua hàng'
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Create spending distribution chart
+                    const spendingDist = data.spending_distribution;
+                    const spendingCtx = document.getElementById('spending-distribution-chart').getContext('2d');
+
+                    new Chart(spendingCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: Object.keys(spendingDist),
+                            datasets: [{
+                                data: Object.values(spendingDist),
+                                backgroundColor: [
+                                    'rgba(231, 76, 60, 0.7)',
+                                    'rgba(230, 126, 34, 0.7)',
+                                    'rgba(241, 196, 15, 0.7)',
+                                    'rgba(46, 204, 113, 0.7)',
+                                    'rgba(52, 152, 219, 0.7)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Phân bố chi tiêu khách hàng'
+                                },
+                                legend: {
+                                    position: 'right'
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching shopping behavior:', error);
+                });
+        }
+
+        // Load common shopping patterns
+        function loadCommonShoppingPatterns() {
+            fetch(`${apiUrl}/common-shopping-patterns`)
+                .then(response => response.json())
+                .then(data => {
+                    const patternsTable = document.getElementById('shopping-patterns');
+                    patternsTable.innerHTML = '';
+
+                    if (!data || data.length === 0) {
+                        const row = patternsTable.insertRow();
+                        const cell = row.insertCell(0);
+                        cell.colSpan = 6;
+                        cell.textContent = "Không có dữ liệu các mẫu mua sắm phổ biến.";
+                        return;
+                    }
+
+                    data.forEach(pattern => {
+                        const row = patternsTable.insertRow();
+                        row.insertCell(0).textContent = pattern.mua_truoc;
+                        row.insertCell(1).innerHTML = '<i class="fas fa-arrow-right"></i>';
+                        row.insertCell(2).textContent = pattern.mua_sau;
+                        row.insertCell(3).textContent = pattern.ho_tro.toFixed(4);
+                        row.insertCell(4).textContent = pattern.do_tin_cay.toFixed(4);
+                        row.insertCell(5).textContent = pattern.do_nang.toFixed(4);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching common shopping patterns:', error);
+                    const patternsTable = document.getElementById('shopping-patterns');
+                    const row = patternsTable.insertRow();
+                    const cell = row.insertCell(0);
+                    cell.colSpan = 6;
+                    cell.textContent = "Lỗi khi tải dữ liệu mẫu mua sắm phổ biến.";
+                });
+        }
+
+        // Load frequently bought together products
+        function loadFrequentlyBoughtTogether() {
+            fetch(`${apiUrl}/frequently-bought-together`)
+                .then(response => response.json())
+                .then(data => {
+                    const table = document.getElementById('frequently-bought-together');
+                    table.innerHTML = '';
+
+                    if (!data || data.length === 0) {
+                        const row = table.insertRow();
+                        const cell = row.insertCell(0);
+                        cell.colSpan = 3;
+                        cell.textContent = "Không có dữ liệu về sản phẩm thường được mua cùng nhau.";
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        const row = table.insertRow();
+                        row.insertCell(0).textContent = item.san_pham_1;
+                        row.insertCell(1).textContent = item.san_pham_2;
+                        row.insertCell(2).textContent = item.so_lan_mua_chung;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching frequently bought together products:', error);
+                    const table = document.getElementById('frequently-bought-together');
+                    const row = table.insertRow();
+                    const cell = row.insertCell(0);
+                    cell.colSpan = 3;
+                    cell.textContent = "Lỗi khi tải dữ liệu sản phẩm thường được mua cùng nhau.";
+                });
+        }
+
+        // Load correlation analysis
+        function loadCorrelationAnalysis() {
+            fetch(`${apiUrl}/correlation-analysis`)
+                .then(response => response.json())
+                .then(data => {
+                    // Create correlation heatmap
+                    const corrData = data.variable_correlation;
+                    const labels = Object.keys(corrData);
+
+                    const correlationValues = [];
+                    for (const key1 of labels) {
+                        const row = [];
+                        for (const key2 of labels) {
+                            row.push(corrData[key1][key2]);
+                        }
+                        correlationValues.push(row);
+                    }
+
+                    const ctx = document.getElementById('correlation-heatmap').getContext('2d');
+
+                    new Chart(ctx, {
+                        type: 'matrix',
+                        data: {
+                            datasets: [{
+                                label: 'Correlation Matrix',
+                                data: correlationValues.flat().map((value, i) => ({
+                                    x: i % labels.length,
+                                    y: Math.floor(i / labels.length),
+                                    v: value
+                                })),
+                                width: ({ chart }) => (chart.chartArea || {}).width / labels.length - 1,
+                                height: ({ chart }) => (chart.chartArea || {}).height / labels.length - 1,
+                                backgroundColor: ({ raw }) => {
+                                    const value = raw.v;
+                                    let r, g, b;
+                                    if (value < 0) {
+                                        r = 255;
+                                        g = b = 255 * (1 + value);
+                                    } else {
+                                        r = b = 255 * (1 - value);
+                                        g = 255;
+                                    }
+                                    return `rgba(${r}, ${g}, ${b}, 0.8)`;
+                                }
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        title() {
+                                            return '';
+                                        },
+                                        label(context) {
+                                            const v = context.dataset.data[context.dataIndex];
+                                            return [
+                                                `${labels[v.x]} - ${labels[v.y]}:`,
+                                                `Correlation: ${v.v.toFixed(2)}`
+                                            ];
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    type: 'category',
+                                    offset: true,
+                                    ticks: {
+                                        display: true,
+                                    },
+                                    grid: {
+                                        display: false
+                                    },
+                                    labels
+                                },
+                                y: {
+                                    type: 'category',
+                                    offset: true,
+                                    ticks: {
+                                        display: true
+                                    },
+                                    grid: {
+                                        display: false
+                                    },
+                                    labels
+                                }
+                            }
+                        }
+                    });
+
+                    // Populate product correlations
+                    const correlationsTable = document.getElementById('product-correlations');
+                    correlationsTable.innerHTML = '';
+
+                    data.product_correlations.forEach(correlation => {
+                        const row = correlationsTable.insertRow();
+                        row.insertCell(0).textContent = correlation.product1;
+                        row.insertCell(1).textContent = correlation.product2;
+                        row.insertCell(2).textContent = correlation.co_occurrence;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching correlation analysis:', error);
+                    // Fallback to display image if the API fails
+                    const canvas = document.getElementById('correlation-heatmap');
+                    const container = canvas.parentElement;
+                    canvas.remove();
+
+                    const img = document.createElement('img');
+                    img.src = 'correlation_heatmap.png';
+                    img.alt = 'Correlation Heatmap';
+                    img.style.width = '100%';
+                    container.appendChild(img);
+                });
+        }
+
+        // Load recommendations and frequent itemsets
+        function loadRecommendations() {
+            fetch(`${apiUrl}/recommendation`)
+                .then(response => response.json())
+                .then(data => {
+                    // Populate frequent itemsets
+                    const itemsetsTable = document.getElementById('frequent-itemsets');
+                    itemsetsTable.innerHTML = '';
+
+                    data.frequent_itemsets.slice(0, 10).forEach(itemset => {
+                        const row = itemsetsTable.insertRow();
+                        row.insertCell(0).textContent = Array.isArray(itemset.itemsets) ? itemset.itemsets.join(', ') : itemset.itemsets;
+                        row.insertCell(1).textContent = parseFloat(itemset.support).toFixed(4);
+                    });
+
+                    // Populate association rules
+                    const rulesTable = document.getElementById('association-rules');
+                    rulesTable.innerHTML = '';
+
+                    data.association_rules.slice(0, 10).forEach(rule => {
+                        const row = rulesTable.insertRow();
+                        row.insertCell(0).textContent = Array.isArray(rule.antecedents) ? rule.antecedents.join(', ') : rule.antecedents;
+                        row.insertCell(1).innerHTML = '<i class="fas fa-arrow-right"></i>';
+                        row.insertCell(2).textContent = Array.isArray(rule.consequents) ? rule.consequents.join(', ') : rule.consequents;
+                        row.insertCell(3).textContent = parseFloat(rule.lift).toFixed(4);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching recommendations:', error);
+                });
+        }
+
+        // Handle product recommendation search
+        document.getElementById('get-recommendations').addEventListener('click', function () {
+            const product = document.getElementById('product-input').value;
+            if (!product) return;
+
+            document.getElementById('current-product').textContent = product;
+
+            fetch(`${apiUrl}/recommend-for-product/${encodeURIComponent(product)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const recommendationsContainer = document.getElementById('recommendations-list');
+                    recommendationsContainer.innerHTML = '';
+
+                    if (data.recommendations.length === 0) {
+                        recommendationsContainer.innerHTML = '<div class="col-12"><p class="alert alert-info">Không tìm thấy gợi ý cho sản phẩm này.</p></div>';
+                        return;
+                    }
+
+                    data.recommendations.forEach(rec => {
+                        const colDiv = document.createElement('div');
+                        colDiv.className = 'col-md-4 mb-3';
+
+                        const card = document.createElement('div');
+                        card.className = 'card h-100';
+
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+
+                        let imageHtml = '';
+                        if (rec.ImagePath) {
+                            imageHtml = `<img src="${rec.ImagePath}" class="product-image mb-3" alt="${rec.Description}">`;
+                        }
+
+                        cardBody.innerHTML = `
+                            ${imageHtml}
+                            <h6 class="card-title">${rec.Description}</h6>
+                            <p class="card-text">
+                                <small class="text-muted">Độ tin cậy: ${(rec.confidence * 100).toFixed(2)}%</small><br>
+                                <small class="text-muted">Số lần mua chung: ${rec.InvoiceNo}</small><br>
+                                <small class="text-muted">Số lượng: ${rec.Quantity}</small>
+                            </p>
+                        `;
+
+                        card.appendChild(cardBody);
+                        colDiv.appendChild(card);
+                        recommendationsContainer.appendChild(colDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching product recommendations:', error);
+                    const recommendationsContainer = document.getElementById('recommendations-list');
+                    recommendationsContainer.innerHTML = '<div class="col-12"><p class="alert alert-danger">Lỗi khi tìm gợi ý sản phẩm.</p></div>';
+                });
+        });
+
+        // Document ready function
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize AOS
+            AOS.init({
+                duration: 1000,
+                once: true
+            });
+
+            loadProductStatistics();
+            loadShoppingBehavior();
+            loadCommonShoppingPatterns();
+            loadFrequentlyBoughtTogether();
+            loadCorrelationAnalysis();
+            loadRecommendations();
+
+            // Show debug info
+            console.log("API URL:", apiUrl);
+            showDebugInfo();
+
+            // Handle recommendation search on Enter key
+            document.getElementById('product-input').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('get-recommendations').click();
+                }
+            });
+
+            // Add error handlers for all fetch calls
+            window.addEventListener('unhandledrejection', function (event) {
+                console.error('Unhandled rejection (promise: ', event.promise, ', reason: ', event.reason, ').');
+                alert('Có lỗi khi kết nối đến API. Vui lòng đảm bảo API đang chạy ở địa chỉ: ' + apiUrl);
+            });
+        });
+
+        function showDebugInfo() {
+            // Create debug panel
+            const debugPanel = document.createElement('div');
+            debugPanel.style.position = 'fixed';
+            debugPanel.style.bottom = '10px';
+            debugPanel.style.right = '10px';
+            debugPanel.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            debugPanel.style.color = 'white';
+            debugPanel.style.padding = '10px';
+            debugPanel.style.borderRadius = '5px';
+            debugPanel.style.zIndex = '9999';
+            debugPanel.style.fontSize = '12px';
+            debugPanel.style.maxWidth = '300px';
+
+            // Test API connection
+            fetch(apiUrl)
+                .then(response => {
+                    if (response.ok) {
+                        debugPanel.innerHTML = '<strong>API Status:</strong> <span style="color:lightgreen">✓ Connected</span><br>';
+                        debugPanel.innerHTML += '<strong>API URL:</strong> ' + apiUrl + '<br>';
+                        document.body.appendChild(debugPanel);
+
+                        // Hide after 5 seconds
+                        setTimeout(() => {
+                            debugPanel.style.display = 'none';
+                        }, 5000);
+                    } else {
+                        debugPanel.innerHTML = '<strong>API Status:</strong> <span style="color:red">✗ Error ' + response.status + '</span><br>';
+                        debugPanel.innerHTML += '<strong>API URL:</strong> ' + apiUrl + '<br>';
+                        debugPanel.innerHTML += '<button id="debug-retry" style="margin-top:5px;padding:3px 8px;background:#4e73df;border:none;color:white;border-radius:3px;">Thử lại</button>';
+                        document.body.appendChild(debugPanel);
+
+                        document.getElementById('debug-retry').addEventListener('click', function () {
+                            location.reload();
+                        });
+                    }
+                })
+                .catch(error => {
+                    debugPanel.innerHTML = '<strong>API Status:</strong> <span style="color:red">✗ Connection Failed</span><br>';
+                    debugPanel.innerHTML += '<strong>API URL:</strong> ' + apiUrl + '<br>';
+                    debugPanel.innerHTML += '<strong>Error:</strong> ' + error.message + '<br>';
+                    debugPanel.innerHTML += '<p>Vui lòng đảm bảo API đang chạy bằng lệnh:<br><code>python api.py</code></p>';
+                    debugPanel.innerHTML += '<button id="debug-retry" style="margin-top:5px;padding:3px 8px;background:#4e73df;border:none;color:white;border-radius:3px;">Thử lại</button>';
+                    document.body.appendChild(debugPanel);
+
+                    document.getElementById('debug-retry').addEventListener('click', function () {
+                        location.reload();
+                    });
+                });
+        }
+    </script>
+</body>
+
+</html>
