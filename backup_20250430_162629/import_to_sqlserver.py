@@ -1,6 +1,10 @@
 import pandas as pd
 import pyodbc
 import os
+import shutil
+import sys
+import time
+from datetime import datetime
 
 # Path to your CSV files
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -338,3 +342,114 @@ if __name__ == "__main__":
     # Uncomment the line below to only import products when running this script directly
     # import_products_with_max_price()
     pass
+
+print("Bắt đầu quá trình dọn dẹp dự án...")
+
+# Danh sách các file cần giữ lại
+essential_files = [
+    'OnlineRetail.xlsx',  # File dữ liệu gốc
+    'data_analysis.py',   # Script phân tích dữ liệu
+    'api.py',             # API Flask
+    'db_connection.py',   # Kết nối CSDL
+    'index.html',         # Giao diện dashboard
+    'shop.html',          # Giao diện cửa hàng
+    'shop.js',            # JavaScript cho cửa hàng
+    'api_documentation.md',  # Tài liệu API
+    'import_to_sqlserver.py',  # Script hiện tại
+]
+
+# Danh sách các thư mục cần giữ lại
+essential_folders = [
+    'imagesProduct',  # Thư mục chứa ảnh sản phẩm
+    'static',         # Thư mục chứa tài nguyên tĩnh
+    '__pycache__'     # Thư mục cache Python (có thể xóa nhưng sẽ tự tạo lại)
+]
+
+# Danh sách các file hình ảnh kết quả phân tích cần giữ lại
+essential_images = [
+    'monthly_revenue.png',
+    'top_products.png',
+    'correlation_heatmap.png',
+    'purchase_frequency.png',
+]
+
+# Danh sách các file sẽ bị xóa
+files_to_remove = [
+    # File dữ liệu trung gian
+    'cleaned_retail_data.csv',
+    'frequent_itemsets.csv',
+    'association_rules.csv',
+    'retail_analysis_results.xlsx',
+]
+
+# Tạo thư mục backup nếu cần
+def create_backup():
+    """Tạo thư mục backup cho các file trước khi xóa"""
+    backup_dir = os.path.join(base_dir, f'backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+    
+    # Backup các file sẽ bị xóa
+    for file in files_to_remove:
+        file_path = os.path.join(base_dir, file)
+        if os.path.exists(file_path):
+            try:
+                shutil.copy2(file_path, os.path.join(backup_dir, file))
+                print(f"Đã sao lưu {file} vào thư mục backup")
+            except Exception as e:
+                print(f"Không thể sao lưu {file}: {str(e)}")
+    
+    return backup_dir
+
+# Xóa các file không cần thiết
+def clean_project(backup_first=True):
+    """Xóa các file không cần thiết sau khi đã import vào cơ sở dữ liệu"""
+    if backup_first:
+        backup_dir = create_backup()
+        print(f"Đã tạo bản sao lưu tại: {backup_dir}")
+    
+    total_removed = 0
+    total_size = 0
+    
+    for file in files_to_remove:
+        file_path = os.path.join(base_dir, file)
+        if os.path.exists(file_path):
+            try:
+                file_size = os.path.getsize(file_path)
+                total_size += file_size
+                os.remove(file_path)
+                total_removed += 1
+                print(f"Đã xóa {file} ({file_size/1024/1024:.2f} MB)")
+            except Exception as e:
+                print(f"Không thể xóa {file}: {str(e)}")
+    
+    print(f"\nĐã xóa tổng cộng {total_removed} file ({total_size/1024/1024:.2f} MB)")
+    print("Dự án đã được dọn dẹp và tối ưu hóa.")
+
+if __name__ == "__main__":
+    user_choice = input("Bạn có muốn tạo bản sao lưu trước khi xóa? (y/n): ").strip().lower()
+    backup_first = user_choice.startswith('y')
+    
+    if not backup_first:
+        confirm = input("Bạn chắc chắn muốn xóa các file mà không sao lưu? (y/n): ").strip().lower()
+        if not confirm.startswith('y'):
+            print("Hủy bỏ quá trình xóa.")
+            sys.exit(0)
+    
+    print("Bắt đầu quá trình dọn dẹp...")
+    clean_project(backup_first)
+    
+    # Thông báo các tệp đã được giữ lại
+    print("\nCác tệp được giữ lại:")
+    for file in essential_files + essential_images:
+        file_path = os.path.join(base_dir, file)
+        if os.path.exists(file_path):
+            print(f"  - {file}")
+    
+    print("\nCác thư mục được giữ lại:")
+    for folder in essential_folders:
+        folder_path = os.path.join(base_dir, folder)
+        if os.path.exists(folder_path):
+            print(f"  - {folder}")
+    
+    print("\nDự án đã sẵn sàng để sử dụng trực tiếp với SQL Server.")
