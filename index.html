@@ -347,14 +347,14 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6 mb-4">
+                    <div class="col-md-6 " style="padding-bottom:150px ;">
                         <h5 class="mb-3">Tương quan giữa các biến</h5>
                         <div class="chart-container">
-                            <canvas id="correlation-heatmap"></canvas>
+                            <canvas id="correlation-heatmap" style="height: 100%;"></canvas>
                         </div>
                     </div>
 
-                    <div class="col-md-6 mb-4">
+                    <!-- <div class="col-md-6 mb-4">
                         <h5 class="mb-3">Các sản phẩm thường được mua cùng nhau</h5>
                         <div class="table-responsive">
                             <table class="table">
@@ -368,7 +368,7 @@
                                 <tbody id="product-correlations"></tbody>
                             </table>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -856,7 +856,6 @@
                             <h6 class="card-title">${rec.Description}</h6>
                             <p class="card-text">
                                 <small class="text-muted">Độ tin cậy: ${(rec.confidence * 100).toFixed(2)}%</small><br>
-                                <small class="text-muted">Số lần mua chung: ${rec.InvoiceNo}</small><br>
                                 <small class="text-muted">Số lượng: ${rec.Quantity}</small>
                             </p>
                         `;

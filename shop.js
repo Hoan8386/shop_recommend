@@ -265,7 +265,7 @@ async function loadPersonalizedRecommendations() {
                         <div class="text-danger fw-bold mb-2">${numberWithCommas(price)}đ</div>
                         <div class="text-muted small mb-2">Mã SP: ${stockCode}</div>
                         <div class="mt-auto">
-                            <button class="btn btn-outline-primary w-100 btn-sm mb-1" onclick="showProductDetail('${description}')">Chi tiết</button>
+                            <button class="btn btn-outline-primary w-100 btn-sm mb-1" onclick="showProductDetail('${description}', 'for-you')">Chi tiết</button>
                             <button class="btn btn-success w-100 btn-sm" onclick="addToCart('${description}', 1, ${price})">
                                 <i class="bi bi-cart-plus"></i> Thêm vào giỏ
                             </button>
@@ -744,7 +744,7 @@ function renderBestSellers(products) {
                     <div class="text-muted small mb-2">Mã SP: ${stockCode}</div>
                     <div class="text-muted small mb-2">Đã bán: ${quantity}</div>
                     <div class="mt-auto">
-                        <button class="btn btn-outline-primary w-100 mb-2" onclick="showProductDetail('${description}')">Xem chi tiết</button>
+                        <button class="btn btn-outline-primary w-100 mb-2" onclick="showProductDetail('${description}', 'bestseller')">Xem chi tiết</button>
                         <button class="btn btn-success w-100" onclick="addToCart('${description}', 1, ${price})">
                             <i class="bi bi-cart-plus"></i> Thêm vào giỏ
                         </button>
@@ -815,7 +815,7 @@ function renderAllProducts(products) {
                     <div class="text-muted small mb-2">Mã SP: ${stockCode}</div>
                     <div class="text-muted small mb-2">Còn lại: ${quantity}</div>
                     <div class="mt-auto">
-                        <button class="btn btn-outline-primary w-100 mb-2" onclick="showProductDetail('${description}')">Xem chi tiết</button>
+                        <button class="btn btn-outline-primary w-100 mb-2" onclick="showProductDetail('${description}', 'all-products')">Xem chi tiết</button>
                         <button class="btn btn-success w-100" onclick="addToCart('${description}', 1, ${price})">
                             <i class="bi bi-cart-plus"></i> Thêm vào giỏ
                         </button>
@@ -828,7 +828,7 @@ function renderAllProducts(products) {
 }
 
 // Hiển thị chi tiết sản phẩm
-window.showProductDetail = async function (description) {
+window.showProductDetail = async function (description, sourceSection = null) {
     try {
         // Hiển thị loading trước khi gọi API
         const productModal = new bootstrap.Modal(document.getElementById('productModal'));
@@ -986,74 +986,80 @@ window.showProductDetail = async function (description) {
             addToCart(description, quantity, price);
         };
 
-        // Kiểm tra nếu có token người dùng đăng nhập và định nghĩa API endpoints
+        // Xác định nguồn gọi nếu không được chỉ định rõ
+        if (!sourceSection) {
+            // Kiểm tra xem sản phẩm có nằm trong phần nào của trang
+            const forYouItems = document.querySelectorAll('#for-you-list .product-title');
+            let isFromForYou = false;
+            
+            for (const item of forYouItems) {
+                if (item.title === description) {
+                    isFromForYou = true;
+                    break;
+                }
+            }
+            
+            if (isFromForYou) {
+                sourceSection = 'for-you';
+            }
+        }
+
+        // Dựa vào nguồn gọi để quyết định API phù hợp
         const token = localStorage.getItem('token');
-        
-        // Khởi tạo thông tin API mặc định
         let apiUrl;
         let apiOptions = {};
-        let apiSource = "dữ liệu chung";
+        let apiSource;
 
-        // API sản phẩm liên quan - có 2 endpoints
-        // 1. API đề xuất dựa trên lịch sử cá nhân (yêu cầu đăng nhập)
-        // 2. API đề xuất dựa trên dữ liệu mua sắm chung (không yêu cầu đăng nhập)
-        
-        try {
-            if (token && currentUser) {
-                // Người dùng đã đăng nhập, thử dùng API cá nhân hóa trước
-                apiUrl = `${API_URL}/api/personal-product-recommendations/${encodeURIComponent(description)}`;
-                apiOptions = {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                };
-                apiSource = "lịch sử mua hàng của bạn";
-                
-                // Gọi API cá nhân hóa
-                const personalResponse = await fetch(apiUrl, apiOptions);
-                
-                if (!personalResponse.ok) {
-                    // Nếu API cá nhân hóa thất bại, chuyển sang API thông thường
-                    throw new Error('API cá nhân hóa không khả dụng');
+        if (sourceSection === 'for-you' || (currentUser && sourceSection === 'personal')) {
+            // Nếu từ phần For You hoặc yêu cầu cá nhân hóa rõ ràng, dùng API cá nhân hóa
+            apiUrl = `${API_URL}/api/personal-product-recommendations/${encodeURIComponent(description)}`;
+            apiOptions = {
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
-                
-                const data = await personalResponse.json();
-                
-                // Kiểm tra nếu không có đề xuất, thử dùng API thông thường
-                if (!data.recommendations || data.recommendations.length === 0) {
-                    throw new Error('Không có đề xuất cá nhân hóa');
-                }
-                
-                // Nếu có dữ liệu, hiển thị
-                displayRecommendations(data, apiSource);
-                
-            } else {
-                // Người dùng không đăng nhập hoặc ưu tiên dùng API thông thường
-                throw new Error('Không có đăng nhập, dùng API thông thường');
-            }
-        } catch (error) {
-            console.log('Chuyển sang API thông thường:', error.message);
-            
-            // Sử dụng API thông thường không yêu cầu đăng nhập
+            };
+            apiSource = "lịch sử mua hàng của bạn";
+        } else {
+            // Nếu từ phần bestsellers hoặc all-products, dùng API gợi ý thông thường
             apiUrl = `${API_URL}/api/recommend-for-product/${encodeURIComponent(description)}`;
             apiSource = "dữ liệu chung";
-            apiOptions = {}; // không cần token
+        }
+
+        console.log(`Đang gọi API từ nguồn: ${apiSource}, URL: ${apiUrl}`);
+        
+        try {
+            const response = await fetch(apiUrl, apiOptions);
             
-            try {
-                const response = await fetch(apiUrl, apiOptions);
-                
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                
-                const data = await response.json();
-                displayRecommendations(data, apiSource);
-                
-            } catch (secondError) {
-                console.error('Error loading recommendations:', secondError);
-                // Hiển thị lỗi trong modal thay vì alert
-                recommendList.innerHTML = '<div class="col-12 text-center text-danger">Đã xảy ra lỗi khi tải đề xuất sản phẩm. Vui lòng thử lại sau.</div>';
+            if (!response.ok) {
+                throw new Error('Không thể tải gợi ý sản phẩm');
             }
+            
+            const data = await response.json();
+
+            // Hiển thị gợi ý
+            displayRecommendations(data, apiSource);
+        } catch (error) {
+            console.error('Lỗi khi tải gợi ý sản phẩm:', error);
+            
+            // Nếu là API cá nhân hóa gặp lỗi, thử dùng API thông thường
+            if (sourceSection === 'for-you' || sourceSection === 'personal') {
+                try {
+                    console.log('Dự phòng: Đang gọi API gợi ý thông thường');
+                    const fallbackUrl = `${API_URL}/api/recommend-for-product/${encodeURIComponent(description)}`;
+                    const fallbackResponse = await fetch(fallbackUrl);
+                    
+                    if (fallbackResponse.ok) {
+                        const fallbackData = await fallbackResponse.json();
+                        displayRecommendations(fallbackData, "dữ liệu chung (dự phòng)");
+                        return;
+                    }
+                } catch (fallbackError) {
+                    console.error('Lỗi khi gọi API dự phòng:', fallbackError);
+                }
+            }
+            
+            // Hiển thị thông báo lỗi nếu cả hai API đều thất bại
+            recommendList.innerHTML = '<div class="col-12 text-center text-danger">Đã xảy ra lỗi khi tải đề xuất sản phẩm. Vui lòng thử lại sau.</div>';
         }
         
         // Hàm hiển thị gợi ý
@@ -1098,7 +1104,7 @@ window.showProductDetail = async function (description) {
                             <div style="font-size:13px">${truncateText(rec.Description, 30)}</div>
                             <div class="text-muted small">Tỷ lệ mua kèm: ${displayConfidence.toFixed(1)}%</div>
                             ${hasValidLift ? `<div class="text-muted small">Độ liên quan: ${lift.toFixed(2)}</div>` : ''}
-                            <button class="btn btn-sm btn-outline-success mt-1" onclick="showProductDetail('${rec.Description}')">Xem</button>
+                            <button class="btn btn-sm btn-outline-success mt-1" onclick="showProductDetail('${rec.Description}', '${source.includes('của bạn') ? 'personal' : 'general'}')">Xem</button>
                         </div>
                     `;
                     recommendList.appendChild(col);
